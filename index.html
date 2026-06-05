@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MVC Yazılım | Hukuk ve Ofis Yazılımları</title>
+  <meta name="description" content="MVC Yazılım; Lexion ve Nexora ile hukuk büroları için dosya, muhasebe, personel, PDF, UYAP ve ekip iletişimi çözümleri geliştirir.">
+  <link rel="icon" href="assets/mvc_yazilim_icon.png">
+  <style>
+    :root {
+      --ink: #122033;
+      --navy: #08182c;
+      --blue: #0b5f86;
+      --blue-2: #0e7490;
+      --gold: #d9a441;
+      --gold-2: #f3c766;
+      --paper: #ffffff;
+      --soft: #f3f7fb;
+      --mist: #e8f1f8;
+      --line: #d6e1ee;
+      --muted: #5d7089;
+      --green: #159a63;
+      --red: #c2410c;
+      --shadow: 0 22px 60px rgba(8, 24, 44, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+    }
+
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    .wrap { width: min(1180px, calc(100% - 42px)); margin: 0 auto; }
+
+    .top-strip {
+      background: var(--navy);
+      color: #dbeafe;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .top-strip .wrap {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .top-strip b { color: white; }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.95);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+    .nav .wrap {
+      min-height: 86px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--navy);
+    }
+    .brand img { width: 78px; height: 78px; object-fit: contain; }
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .links a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 13px;
+      border-radius: 6px;
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .links a:hover { background: var(--mist); }
+    .links .cta {
+      margin-left: 6px;
+      background: var(--gold);
+      color: #071528;
+      padding: 0 20px;
+      box-shadow: 0 12px 28px rgba(217,164,65,.24);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 700px;
+      background:
+        linear-gradient(90deg, rgba(8,24,44,.98) 0%, rgba(8,24,44,.91) 47%, rgba(8,24,44,.55) 100%),
+        url("assets/slides/01-genel.jpg") center/cover;
+      color: white;
+    }
+    .hero .wrap {
+      min-height: 700px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 460px;
+      align-items: center;
+      gap: 48px;
+      padding: 68px 0 72px;
+    }
+    .eyebrow {
+      width: fit-content;
+      margin-bottom: 18px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: #e6f6ff;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0;
+      max-width: 790px;
+      font-size: clamp(45px, 6vw, 84px);
+      line-height: .98;
+      letter-spacing: 0;
+      font-weight: 900;
+    }
+    .hero p {
+      max-width: 700px;
+      margin: 24px 0 0;
+      color: #dce7f7;
+      font-size: 20px;
+      line-height: 1.65;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .btn {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 7px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .btn.gold { background: var(--gold); color: #071528; }
+    .btn.dark { background: var(--navy); color: white; }
+    .btn.light { background: white; color: var(--navy); }
+    .btn.ghost {
+      background: rgba(255,255,255,.10);
+      color: white;
+      border: 1px solid rgba(255,255,255,.22);
+    }
+    .hero-card {
+      background: rgba(255,255,255,.96);
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero-card-head {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      background: var(--navy);
+      color: white;
+      font-weight: 900;
+    }
+    .hero-card-head img { width: 44px; height: 44px; object-fit: contain; }
+    .hero-card-body { padding: 20px; }
+    .mini-products { display: grid; gap: 12px; }
+    .mini-product {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 13px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 9px;
+    }
+    .mini-product img { width: 58px; height: 58px; object-fit: contain; }
+    .mini-product h3 { margin: 0 0 4px; font-size: 18px; color: var(--navy); }
+    .mini-product p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    section { padding: 78px 0; }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    .section-head h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.08;
+      font-weight: 900;
+    }
+    .section-head p {
+      max-width: 560px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .about { background: white; }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 26px;
+      align-items: stretch;
+    }
+    .text-panel, .info-panel, .product-panel, .download-card, .contact-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(8,24,44,.06);
+    }
+    .text-panel { padding: 28px; }
+    .text-panel p { color: var(--muted); line-height: 1.8; font-size: 16px; }
+    .text-panel p:first-of-type { margin-top: 0; }
+    .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .metric {
+      padding: 22px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .metric b { display: block; color: var(--navy); font-size: 30px; }
+    .metric span { color: var(--muted); font-size: 13px; font-weight: 800; }
+
+    .products { background: var(--soft); }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+    .product-panel {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      padding: 28px;
+    }
+    .product-panel::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--gold), var(--blue-2));
+    }
+    .product-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .product-top img { width: 86px; height: 86px; object-fit: contain; }
+    .product-top h3 { margin: 0; color: var(--navy); font-size: 32px; }
+    .product-top span {
+      display: inline-flex;
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--mist);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .product-panel p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 22px 0 26px;
+    }
+    .feature {
+      padding: 13px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+    .feature::before {
+      content: "✓";
+      margin-right: 8px;
+      color: var(--green);
+      font-weight: 900;
+    }
+    .product-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .showcase { background: white; }
+    .slider-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 24px;
+      align-items: stretch;
+    }
+    .slide-frame {
+      position: relative;
+      min-height: 560px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      background: var(--navy);
+    }
+    .slide-frame img {
+      width: 100%;
+      height: 100%;
+      min-height: 560px;
+      object-fit: cover;
+    }
+    .slide-controls {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .slide-dots { display: flex; gap: 7px; justify-content: center; flex: 1; }
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255,255,255,.45);
+      cursor: pointer;
+    }
+    .dot.active { background: var(--gold); }
+    .slide-text {
+      padding: 26px;
+      background: var(--navy);
+      color: white;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+    .slide-text h3 { margin: 0 0 12px; font-size: 28px; }
+    .slide-text p { color: #dce7f7; line-height: 1.7; margin: 0 0 18px; }
+    .slide-text ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    .slide-text li {
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      color: #eaf2ff;
+      font-weight: 750;
+    }
+
+    .downloads { background: var(--soft); }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .download-card { padding: 24px; }
+    .download-card h3 { margin: 0 0 10px; color: var(--navy); font-size: 22px; }
+    .download-card p { margin: 0 0 20px; color: var(--muted); line-height: 1.6; }
+    .download-card .btn { width: 100%; }
+
+    .company { background: white; }
+    .company-card {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 26px;
+      align-items: center;
+      padding: 34px;
+      background: linear-gradient(135deg, var(--navy), #0b3f5a);
+      border-radius: 14px;
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    .company-card img {
+      width: 220px;
+      height: 220px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+    .company-card h2 { margin: 0 0 14px; font-size: 40px; }
+    .company-card p { margin: 0; color: #dce7f7; line-height: 1.8; font-size: 16px; }
+
+    .contact { background: var(--soft); }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 24px;
+    }
+    .contact-card { padding: 26px; }
+    .contact-card h3 { margin: 0 0 16px; color: var(--navy); font-size: 24px; }
+    .contact-row {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .contact-row b { display: block; color: var(--ink); margin-bottom: 3px; }
+    .form { display: grid; gap: 12px; }
+    .form input, .form textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 0 14px;
+      min-height: 46px;
+      color: var(--ink);
+    }
+    .form textarea { min-height: 140px; padding: 12px 14px; resize: vertical; }
+
+    footer {
+      background: var(--navy);
+      color: #dce7f7;
+      padding: 28px 0;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    footer .wrap {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .nav .wrap, .section-head { align-items: flex-start; }
+      .nav .wrap, .hero .wrap, .about-grid, .product-grid, .slider-shell, .download-grid, .company-card, .contact-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav .wrap { display: grid; }
+      .links { justify-content: flex-start; }
+      .hero, .hero .wrap { min-height: auto; }
+      h1 { font-size: 45px; }
+      .brand img { width: 66px; height: 66px; }
+      .product-panel { min-height: auto; }
+      .features, .metric-grid { grid-template-columns: 1fr; }
+      .slide-frame, .slide-frame img { min-height: 420px; }
+    }
+
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 28px, 1180px); }
+      .links a, .links .cta, .actions .btn, .product-actions .btn { width: 100%; }
+      .hero p { font-size: 17px; }
+      .product-top { align-items: flex-start; }
+      .product-top img { width: 72px; height: 72px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-strip">
+    <div class="wrap">
+      <span>MVC Yazılım | Hukuk ve ofis teknolojileri</span>
+      <span><b>Destek:</b> +90 546 788 6526</span>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="#anasayfa" aria-label="MVC Yazılım Anasayfa">
+        <img src="assets/mvc_yazilim_icon.png" alt="MVC Yazılım logo">
+        <span>MVC Yazılım<small>Lexion ve Nexora ürünleri</small></span>
+      </a>
+      <nav class="links" aria-label="Ana menü">
+        <a href="#anasayfa">Anasayfa</a>
+        <a href="#uygulamalar">Uygulamalar</a>
+        <a href="#lexion">Lexion</a>
+        <a href="#nexora">Nexora</a>
+        <a href="#indir">İndir</a>
+        <a href="#hakkinda">Hakkında</a>
+        <a href="#iletisim">İletişim</a>
+        <a class="cta" href="#indir">Setup İndir</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="anasayfa">
+      <div class="wrap">
+        <div>
+          <div class="eyebrow">MVC Yazılım ürün ailesi</div>
+          <h1>Hukuk büroları için masaüstü, web ve iletişim çözümleri.</h1>
+          <p>MVC Yazılım; operasyon takibi, dosya föyü, muhasebe, personel yönetimi, PDF araçları ve kurum içi sohbet ihtiyaçlarını tek ürün ailesinde toplayan profesyonel yazılımlar geliştirir.</p>
+          <div class="actions">
+            <a class="btn gold" href="#uygulamalar">Uygulamaları İncele</a>
+            <a class="btn ghost" href="#indir">Kurulum Paketleri</a>
+          </div>
+        </div>
+
+        <aside class="hero-card" aria-label="MVC Yazılım uygulamaları">
+          <div class="hero-card-head">
+            <img src="assets/mvc_yazilim_icon.png" alt="">
+            MVC Yazılım
+          </div>
+          <div class="hero-card-body">
+            <div class="mini-products">
+              <a class="mini-product" href="#lexion">
+                <img src="assets/lexion_icon.png" alt="">
+                <div><h3>Lexion</h3><p>Hukuk büroları için dosya, muhasebe, personel, UYAP ve PDF çalışma merkezi.</p></div>
+              </a>
+              <a class="mini-product" href="#nexora">
+                <img src="assets/nexora_icon.png" alt="">
+                <div><h3>Nexora</h3><p>Ofis kullanıcıları için anlık mesajlaşma, grup ve dosya paylaşım uygulaması.</p></div>
+              </a>
+              <a class="mini-product" href="#indir">
+                <img src="assets/mvc_yazilim_icon.png" alt="">
+                <div><h3>Ortak Setup</h3><p>Lexion, Nexora veya iki ürünü birlikte kurma seçenekli MVC Yazılım kurulumu.</p></div>
+              </a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="about" id="uygulamalar">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Ofis süreçleri için tek marka altında iki güçlü uygulama.</h2>
+          <p>Lexion operasyonu yönetir, Nexora ekibi konuşturur. İki uygulama aynı ofis kullanıcı mantığıyla çalışacak şekilde tasarlanmıştır.</p>
+        </div>
+        <div class="about-grid">
+          <article class="text-panel">
+            <p>MVC Yazılım ürünleri, hukuk bürolarında günlük işin hızını ve kontrolünü artırmak için geliştirilir. Amaç sadece kayıt tutmak değil; dosya, tahsilat, muhasebe, personel ve ekip iletişimini birbiriyle uyumlu çalışan sade ekranlarda toplamaktır.</p>
+            <p>Lexion, yoğun dosya föyü ve operasyon takibi yapan bürolar için masaüstü çalışma alanı sunar. Nexora ise aynı ofis kullanıcı yapısını kullanarak ekip içi mesajlaşmayı ayrı ve profesyonel bir uygulamaya taşır.</p>
+          </article>
+          <aside class="info-panel text-panel">
+            <div class="metric-grid">
+              <div class="metric"><b>2</b><span>Aktif Uygulama</span></div>
+              <div class="metric"><b>Tek</b><span>Ofis Kullanıcı Mantığı</span></div>
+              <div class="metric"><b>Web</b><span>Tanıtım ve İndirme</span></div>
+              <div class="metric"><b>Setup</b><span>Seçmeli Kurulum</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="products">
+      <div class="wrap">
+        <div class="product-grid">
+          <article class="product-panel" id="lexion">
+            <div class="product-top">
+              <img src="assets/lexion_icon.png" alt="Lexion logo">
+              <div>
+                <h3>Lexion</h3>
+                <span>Hukuk çalışma merkezi</span>
+              </div>
+            </div>
+            <p>Lexion; dosya föyü, icra araçları, UYAP talepleri, PDF işlemleri, muhasebe, personel yönetimi, yetki sistemi ve raporlama ekranlarını tek masaüstü uygulamasında toplar.</p>
+            <div class="features">
+              <div class="feature">Dosya föyü ve kurum bazlı takip</div>
+              <div class="feature">Araç, taşınmaz, maaş haczi ve kesinleştirme föyleri</div>
+              <div class="feature">YTS tahsilat girişi ve raporlar</div>
+              <div class="feature">Muhasebe hareketleri ve kurum bakiyesi</div>
+              <div class="feature">PDF, UDF ve Excel çalışma alanları</div>
+              <div class="feature">Personel, izin, prim ve yetki yönetimi</div>
+            </div>
+            <div class="product-actions">
+              <a class="btn dark" href="https://github.com/mvcanalpp/ofisdesk-site/releases/download/v1.5.2/Lexion.exe">Lexion İndir</a>
+              <a class="btn light" href="#lexion-slides">Ekranları Gör</a>
+            </div>
+          </article>
+
+          <article class="product-panel" id="nexora">
+            <div class="product-top">
+              <img src="assets/nexora_icon.png" alt="Nexora logo">
+              <div>
+                <h3>Nexora</h3>
+                <span>Ofis içi sohbet ve ekip iletişimi</span>
+              </div>
+            </div>
+            <p>Nexora; ofis kullanıcılarının birbirleriyle birebir veya grup halinde görüşmesi, dosya paylaşması, mesaj durumlarını takip etmesi ve ekip içi akışı hızlandırması için hazırlanmış ayrı bir iletişim uygulamasıdır.</p>
+            <div class="features">
+              <div class="feature">Ofis kullanıcılarıyla otomatik eşleşme</div>
+              <div class="feature">Birebir sohbet ve grup oluşturma</div>
+              <div class="feature">Dosya ve görsel gönderme</div>
+              <div class="feature">Yazıyor, görüldü ve bildirim desteği</div>
+              <div class="feature">Yanıtla ve mesajı geri alma</div>
+              <div class="feature">Kişi kartı ve profil fotoğrafı</div>
+            </div>
+            <div class="product-actions">
+              <a class="btn dark" href="https://github.com/mvcanalpp/ofisdesk-site/releases/download/v1.5.2/Nexora.exe">Nexora İndir</a>
+              <a class="btn light" href="#indir">Ortak Setup</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="showcase" id="lexion-slides">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Lexion ekranları ve kullanım alanları.</h2>
+          <p>OfisDesk tanıtım slaytları Lexion ürün ailesinin çalışma mantığını gösterir: dosya föyü, personel, muhasebe, UYAP/PDF araçları ve fiyatlandırma.</p>
+        </div>
+        <div class="slider-shell">
+          <div class="slide-frame">
+            <img id="slideImage" src="assets/slides/01-genel.jpg" alt="Lexion tanıtım slaytı">
+            <div class="slide-controls">
+              <button class="icon-btn" id="prevSlide" type="button" aria-label="Önceki slayt">‹</button>
+              <div class="slide-dots" id="slideDots"></div>
+              <button class="icon-btn" id="nextSlide" type="button" aria-label="Sonraki slayt">›</button>
+            </div>
+          </div>
+          <aside class="slide-text">
+            <h3 id="slideTitle">Lexion Genel Bakış</h3>
+            <p id="slideDesc">Hukuk büroları için dosya, muhasebe, UYAP, PDF ve personel süreçlerini tek çalışma merkezinde toplar.</p>
+            <ul>
+              <li>Başlık filtreleri ve gelişmiş föy yönetimi</li>
+              <li>Kurum bazlı muhasebe ve raporlama</li>
+              <li>Personel izin, prim ve performans takibi</li>
+              <li>PDF/UDF araçları ve toplu işlem seçenekleri</li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="downloads" id="indir">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>İndirme ve kurulum paketleri.</h2>
+          <p>GitHub Pages üzerinde çalışacak şekilde yerel indirme bağlantıları hazırlandı. İsterseniz sadece Lexion, sadece Nexora veya ortak setup dosyasını yayınlayabilirsiniz.</p>
+        </div>
+        <div class="download-grid">
+          <article class="download-card">
+            <h3>Ortak Setup</h3>
+            <p>Lexion kur, Nexora kur veya ikisini birlikte kur seçenekli MVC Yazılım kurulum dosyası.</p>
+            <a class="btn gold" href="https://github.com/mvcanalpp/ofisdesk-site/releases/download/v1.5.2/MVC_Yazilim_Lexion_Nexora_Setup_v1.5.2.exe">Setup İndir</a>
+          </article>
+          <article class="download-card">
+            <h3>Lexion</h3>
+            <p>Hukuk bürosu çalışma merkezi masaüstü uygulaması.</p>
+            <a class="btn dark" href="https://github.com/mvcanalpp/ofisdesk-site/releases/download/v1.5.2/Lexion.exe">Lexion.exe</a>
+          </article>
+          <article class="download-card">
+            <h3>Nexora</h3>
+            <p>Ofis kullanıcıları için ayrı sohbet ve ekip iletişim uygulaması.</p>
+            <a class="btn dark" href="https://github.com/mvcanalpp/ofisdesk-site/releases/download/v1.5.2/Nexora.exe">Nexora.exe</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="company" id="hakkinda">
+      <div class="wrap">
+        <div class="company-card">
+          <img src="assets/mvc_yazilim_icon.png" alt="MVC Yazılım logo">
+          <div>
+            <h2>MVC Yazılım Hakkında</h2>
+            <p>MVC Yazılım, hukuk bürolarının günlük operasyonlarını daha düzenli, ölçülebilir ve güvenli hale getirmek amacıyla geliştirilen masaüstü ve web destekli yazılım çözümlerinin markasıdır. Ürün ailesi; büro bazlı veri ayrımı, kullanıcı yetkileri, raporlama, yedekleme ve kolay kurulum yaklaşımıyla satışa hazır, pratik ve sürdürülebilir bir yapı sunar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="iletisim">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>İletişim ve destek.</h2>
+          <p>Kurulum, lisans, demo ve destek talepleri için MVC Yazılım iletişim kanallarını kullanabilirsiniz.</p>
+        </div>
+        <div class="contact-grid">
+          <article class="contact-card">
+            <h3>Destek Bilgileri</h3>
+            <div class="contact-row"><b>Adres</b>Gölbaşı / Ankara</div>
+            <div class="contact-row"><b>Telefon</b>+90 546 788 6526</div>
+            <div class="contact-row"><b>E-posta</b>destek@mvc-yazilim.com</div>
+            <div class="contact-row"><b>Ürünler</b>Lexion, Nexora, MVC Yazılım Setup</div>
+          </article>
+          <article class="contact-card">
+            <h3>Demo ve Lisans Talebi</h3>
+            <form class="form" action="mailto:destek@mvc-yazilim.com" method="post" enctype="text/plain">
+              <input name="Ad Soyad" placeholder="Ad Soyad">
+              <input name="Telefon" placeholder="Telefon">
+              <input name="Konu" placeholder="Talep konusu">
+              <textarea name="Mesaj" placeholder="Mesajınız"></textarea>
+              <button class="btn gold" type="submit">Talep Gönder</button>
+            </form>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 MVC Yazılım. Tüm hakları saklıdır.</span>
+      <span>Lexion ve Nexora MVC Yazılım ürün ailesidir.</span>
+    </div>
+  </footer>
+
+  <script>
+    const slides = [
+      { src: "assets/slides/01-genel.jpg", title: "Lexion Genel Bakış", desc: "Hukuk büroları için dosya, muhasebe, UYAP, PDF ve personel süreçlerini tek çalışma merkezinde toplar." },
+      { src: "assets/slides/02-dosya-foyu.jpg", title: "Dosya Föyü", desc: "Kurum bazlı dosya takibi, son değiştiren bilgisi, yedekleme ve başlık filtreleriyle kontrol sağlar." },
+      { src: "assets/slides/03-personel-kontrol.jpg", title: "Personel ve Kontrol", desc: "Personel bilgileri, kullanıcı yetkileri, işlem geçmişi, izin ve prim süreçleri tek alanda yönetilir." },
+      { src: "assets/slides/04-muhasebe.jpg", title: "Muhasebe", desc: "Kurum bakiyeleri, gelir gider hareketleri, UYAP masrafı ve Excel raporları takip edilir." },
+      { src: "assets/slides/05-uyap-pdf.jpg", title: "UYAP ve PDF Araçları", desc: "Talep şablonları, PDF birleştirme, bölme, sıkıştırma ve toplu işlem akışları hızlandırılır." },
+      { src: "assets/slides/06-ek-ozellikler.jpg", title: "Ek Özellikler", desc: "Bulut bağlantısı, yedekleme, toplu talepler, barkod sorgulama ve tahsilat ayrıştırma özellikleri sunulur." },
+      { src: "assets/slides/07-fiyatlandirma.jpg", title: "Esnek Fiyatlandırma", desc: "Demo, aylık, yıllık ve sınırsız kullanıcı paketleriyle farklı ofis ihtiyaçlarına uygun lisanslama yapılır." }
+    ];
+
+    let slideIndex = 0;
+    const image = document.getElementById("slideImage");
+    const title = document.getElementById("slideTitle");
+    const desc = document.getElementById("slideDesc");
+    const dots = document.getElementById("slideDots");
+
+    function renderDots() {
+      dots.innerHTML = "";
+      slides.forEach((_, i) => {
+        const dot = document.createElement("button");
+        dot.className = "dot" + (i === slideIndex ? " active" : "");
+        dot.type = "button";
+        dot.setAttribute("aria-label", `${i + 1}. slayt`);
+        dot.addEventListener("click", () => showSlide(i));
+        dots.appendChild(dot);
+      });
+    }
+
+    function showSlide(index) {
+      slideIndex = (index + slides.length) % slides.length;
+      image.src = slides[slideIndex].src;
+      title.textContent = slides[slideIndex].title;
+      desc.textContent = slides[slideIndex].desc;
+      renderDots();
+    }
+
+    document.getElementById("prevSlide").addEventListener("click", () => showSlide(slideIndex - 1));
+    document.getElementById("nextSlide").addEventListener("click", () => showSlide(slideIndex + 1));
+    renderDots();
+    setInterval(() => showSlide(slideIndex + 1), 6500);
+  </script>
+</body>
+</html>
