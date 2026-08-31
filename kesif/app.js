@@ -1,83 +1,16 @@
-const today = new Date().toISOString().slice(0, 10);
-const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-const seed = [
-  { id: 1, date: today, office: 'İstanbul 3. İcra Dairesi', number: '2026/1234', debtor: 'Mehmet Kaya', balance: '125.000 ₺', serviceId: 'SRV-18', customerNo: 'M-442', address: 'Kadıköy, İstanbul', plates: '34 ABC 123', assignee: 'Ahmet Yılmaz', status: 'Bekliyor' },
-  { id: 2, date: tomorrow, office: 'Üsküdar İcra Dairesi', number: '2026/1456', debtor: 'Yıldız Ticaret Ltd.', balance: '78.500 ₺', serviceId: 'SRV-21', customerNo: 'M-651', address: 'Üsküdar, İstanbul', plates: '', assignee: 'Ahmet Yılmaz', status: 'Bekliyor' }
-];
-let records = JSON.parse(localStorage.getItem('mvc-kesif-v2') || 'null') || seed;
-const $ = selector => document.querySelector(selector);
-const save = () => localStorage.setItem('mvc-kesif-v2', JSON.stringify(records));
-const esc = value => String(value || '—').replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char]));
-const pill = status => `<span class="pill ${status === 'Tamamlandı' ? 'done' : status === 'Tekrar keşif' ? 'retry' : ''}">${esc(status)}</span>`;
-
-function go(view) {
-  document.querySelectorAll('.view').forEach(item => item.classList.remove('active'));
-  $(`#${view}`).classList.add('active');
-  document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === view));
-  if (view === 'dashboard') dashboard();
-  if (view === 'tasks') tasks();
-}
-
-function dashboard() {
-  $('#total').textContent = records.length;
-  $('#today').textContent = records.filter(item => item.date === today).length;
-  $('#done').textContent = records.filter(item => item.status === 'Tamamlandı').length;
-  $('#retry').textContent = records.filter(item => item.status === 'Tekrar keşif').length;
-  $('#upcoming').innerHTML = records.slice().sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5).map(item => `<div class="case"><div><span class="label">${item.date} · ${esc(item.office)}</span><h3>${esc(item.number)} · ${esc(item.debtor)}</h3><p>${esc(item.address)} · ${esc(item.assignee)}</p></div>${pill(item.status)}</div>`).join('');
-}
-
-function tasks() {
-  const date = $('#taskDate').value || today;
-  $('#taskDate').value = date;
-  const list = records.filter(item => item.date === date);
-  $('#taskList').innerHTML = list.length ? `<div class="table-wrap"><table><thead><tr><th>İcra Dairesi</th><th>Dosya No</th><th>Borçlu Ünvanı</th><th>Bakiye</th><th>Service ID</th><th>Müşteri No</th><th>Adres</th><th>Plakalar</th><th></th></tr></thead><tbody>${list.map(item => `<tr><td>${esc(item.office)}</td><td>${esc(item.number)}</td><td>${esc(item.debtor)}</td><td>${esc(item.balance)}</td><td>${esc(item.serviceId)}</td><td>${esc(item.customerNo)}</td><td>${esc(item.address)}</td><td>${esc(item.plates)}</td><td><button class="primary" onclick="detail(${item.id})">Keşfe başla</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Bu tarih için atanan keşif dosyası yok.</div>';
-}
-
-function detail(id) {
-  const item = records.find(record => record.id === id);
-  $('#dDate').textContent = `${item.date} · ${item.office}`;
-  $('#dTitle').textContent = `${item.number} · ${item.debtor}`;
-  $('#dAddress').textContent = item.address;
-  $('#detailInfo').innerHTML = [['Bakiye', item.balance], ['Service ID', item.serviceId], ['Müşteri No', item.customerNo], ['Plakalar', item.plates], ['Atanan personel', item.assignee]].map(row => `<tr><th>${row[0]}</th><td>${esc(row[1])}</td></tr>`).join('');
-  $('#report [name=id]').value = id;
-  go('detail');
-}
-window.detail = detail;
-
-document.querySelectorAll('[data-view]').forEach(item => item.onclick = () => go(item.dataset.view));
-document.querySelectorAll('[data-go]').forEach(item => item.onclick = () => go(item.dataset.go));
-$('#taskDate').onchange = tasks;
-$('#addForm').onsubmit = event => {
-  event.preventDefault();
-  records.push({ id: Date.now(), ...Object.fromEntries(new FormData(event.target)), status: 'Bekliyor' });
-  save(); event.target.reset(); go('tasks');
-};
-$('#report').onsubmit = event => {
-  event.preventDefault();
-  const data = Object.fromEntries(new FormData(event.target));
-  const item = records.find(record => record.id === Number(data.id));
-  Object.assign(item, { note: data.note, locationCheck: data.locationCheck, vehicleCheck: data.vehicleCheck, paymentStatus: data.paymentStatus, promiseDate: data.promiseDate, asset: data.asset, status: data.status === 'Bulunamadı' ? 'Tekrar keşif' : 'Tamamlandı' });
-  save(); go('tasks');
-};
-$('#import').onclick = () => {
-  const lines = $('#csv').value.trim().split(/\r?\n/).filter(Boolean);
-  const start = lines[0]?.toLowerCase().includes('tarih') ? 1 : 0;
-  let added = 0;
-  for (const line of lines.slice(start)) {
-    const values = line.split(',').map(value => value.trim());
-    if (values.length < 9) continue;
-    const [date, office, number, debtor, balance, serviceId, customerNo, address, plates, assignee] = values;
-    records.push({ id: Date.now() + added++, date, office, number, debtor, balance, serviceId, customerNo, address, plates, assignee: assignee || 'Ahmet Yılmaz', status: 'Bekliyor' });
-  }
-  save(); alert(`${added} dosya içe aktarıldı.`); $('#csv').value = ''; go('tasks');
-};
-$('#downloadTemplate').onclick = () => {
-  const file = new Blob(['tarih,icra_dairesi,dosya_no,borclu_unvani,bakiye,service_id,musteri_no,adres,plakalar,personel\n2026-09-01,İstanbul 3. İcra Dairesi,2026/1234,Mehmet Kaya,125000,SRV-18,M-442,Kadıköy İstanbul,34 ABC 123,Ahmet Yılmaz'], { type: 'text/csv' });
-  const link = document.createElement('a'); link.href = URL.createObjectURL(file); link.download = 'kesif-dosya-sablonu.csv'; link.click();
-};
-$('#report').insertAdjacentHTML('beforeend', `<label>Araç / adres tespiti<select name="vehicleCheck"><option>Seçilmedi</option><option>Araç adreste bulundu</option><option>Araçlar adreste bulundu</option><option>Araç bulunamadı</option></select></label><label>Adres teyidi<select name="locationCheck"><option>Seçilmedi</option><option>Adres komşudan teyit edildi</option><option>Adres muhtardan teyit edildi</option><option>Adres teyit edilemedi</option></select></label><label>Ödeme durumu<select name="paymentStatus" id="paymentStatus"><option>Ödeme yapma durumu yok</option><option>Ödeme yaptı</option><option>Ödeme yapacak</option><option>Fiili hacze gelinsin</option></select></label><label id="promiseDateWrap">Ödeme sözü tarihi<input name="promiseDate" type="date"></label>`);
-$('#paymentStatus').onchange = event => $('#promiseDateWrap').style.display = event.target.value === 'Ödeme yapacak' ? 'grid' : 'none';
-$('#promiseDateWrap').style.display = 'none';
-let deferred; addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferred = event; });
-$('#install').onclick = async () => { if (!deferred) return alert('Tarayıcı menüsünden Ana ekrana ekle seçeneğini kullanın.'); deferred.prompt(); deferred = null; };
-dashboard(); if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+const db=supabase.createClient('https://hqrheypbdvhwpnwdoqka.supabase.co','sb_publishable_-YVy92hAZ_-IpNJOJTX_Sg_kQVd5_ZI'),$=s=>document.querySelector(s),today=new Date().toISOString().slice(0,10);let records=[],me,profile;
+document.body.insertAdjacentHTML('afterbegin','<div id="auth" style="position:fixed;inset:0;z-index:5;background:#102a43ee;display:grid;place-items:center;padding:18px"><form id="authForm" class="panel" style="width:min(420px,100%);background:white"><h2>MVC Keşif Girişi</h2><p class="muted">Yönetici veya keşif personeli hesabınızla giriş yapın.</p><label>E-posta<input name="email" type="email" required></label><br><label>Şifre<input name="password" type="password" minlength="8" required></label><div class="actions"><button class="primary">Giriş yap</button><button type="button" class="outline" id="signup">Hesap oluştur</button></div><p id="authMsg" class="muted"></p></form></div>');
+$('#report').insertAdjacentHTML('beforeend','<label>Araç / adres tespiti<select name="vehicleCheck"><option>Araç adreste bulundu</option><option>Araçlar adreste bulundu</option><option>Araç bulunamadı</option></select></label><label>Adres teyidi<select name="locationCheck"><option>Adres komşudan teyit edildi</option><option>Adres muhtardan teyit edildi</option><option>Adres teyit edilemedi</option></select></label><label>Ödeme durumu<select name="paymentStatus"><option>Ödeme yapma durumu yok</option><option>Ödeme yaptı</option><option>Ödeme yapacak</option><option>Fiili hacze gelinsin</option></select></label><label>Ödeme sözü tarihi<input name="promiseDate" type="date"></label>');
+const esc=v=>String(v??'—').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));const pill=s=>`<span class="pill ${s==='Tamamlandı'?'done':s==='Tekrar keşif'?'retry':''}">${esc(s)}</span>`;
+function go(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('#'+v).classList.add('active');document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));if(v==='dashboard')dashboard();if(v==='tasks')tasks()}
+function dashboard(){$('#total').textContent=records.length;$('#today').textContent=records.filter(x=>x.date===today).length;$('#done').textContent=records.filter(x=>x.status==='Tamamlandı').length;$('#retry').textContent=records.filter(x=>x.status==='Tekrar keşif').length;$('#upcoming').innerHTML=records.slice(0,6).map(x=>`<div class="case"><div><span class="label">${x.date} · ${esc(x.office)}</span><h3>${esc(x.number)} · ${esc(x.debtor)}</h3><p>${esc(x.address)}</p></div>${pill(x.status)}</div>`).join('')||'<div class="empty">Henüz görev yok.</div>'}
+function tasks(){let date=$('#taskDate').value||today;$('#taskDate').value=date;let list=records.filter(x=>x.date===date);$('#taskList').innerHTML=list.length?`<div class="table-wrap"><table><thead><tr><th>İcra Dairesi</th><th>Dosya No</th><th>Borçlu Ünvanı</th><th>Bakiye</th><th>Service ID</th><th>Müşteri No</th><th>Adres</th><th>Plakalar</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.office)}</td><td>${esc(x.number)}</td><td>${esc(x.debtor)}</td><td>${esc(x.balance)}</td><td>${esc(x.serviceId)}</td><td>${esc(x.customerNo)}</td><td>${esc(x.address)}</td><td>${esc(x.plates)}</td><td><button class="primary" onclick="detail('${x.id}')">Keşfe başla</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Bu tarih için atanan keşif dosyası yok.</div>'}
+function detail(id){let x=records.find(x=>x.id===id);$('#dDate').textContent=x.date+' · '+x.office;$('#dTitle').textContent=x.number+' · '+x.debtor;$('#dAddress').textContent=x.address;$('#detailInfo').innerHTML=[['Bakiye',x.balance],['Service ID',x.serviceId],['Müşteri No',x.customerNo],['Plakalar',x.plates]].map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('');$('#report [name=id]').value=id;go('detail')}window.detail=detail;
+async function load(){let {data,error}=await db.from('kesif_dosyalari').select('*').order('kesif_tarihi');if(error)return alert(error.message);records=data.map(x=>({id:x.id,date:x.kesif_tarihi,office:x.icra_dairesi,number:x.dosya_no,debtor:x.borclu_unvani,balance:x.bakiye,serviceId:x.service_id,customerNo:x.musteri_no,address:x.adres,plates:x.plakalar,status:x.durum}));dashboard();tasks()}
+async function ready(session){me=session.user;let p=await db.from('profiles').select('*').eq('id',me.id).single();if(p.error)return $('#authMsg').textContent=p.error.message;profile=p.data;$('#auth').remove();if(profile.role!=='yonetici'){document.querySelectorAll('[data-view="add"],[data-view="bulk"],[data-go="add"],[data-go="bulk"]').forEach(x=>x.style.display='none')}await load()}
+$('#authForm').onsubmit=async e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target)),r=await db.auth.signInWithPassword(d);if(r.error)return $('#authMsg').textContent=r.error.message;ready(r.data.session)};$('#signup').onclick=async()=>{let d=Object.fromEntries(new FormData($('#authForm'))),r=await db.auth.signUp({email:d.email,password:d.password,options:{data:{full_name:d.email.split('@')[0]}}});$('#authMsg').textContent=r.error?'Hata: '+r.error.message:'Hesap oluşturuldu. E-posta doğrulamasını tamamlayıp giriş yapın.'};
+document.querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>go(x.dataset.view));document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));$('#taskDate').onchange=tasks;
+$('#addForm').onsubmit=async e=>{e.preventDefault();if(profile.role!=='yonetici')return;let d=Object.fromEntries(new FormData(e.target));let r=await db.from('kesif_dosyalari').insert({kesif_tarihi:d.date,icra_dairesi:d.office,dosya_no:d.number,borclu_unvani:d.debtor,bakiye:d.balance||null,service_id:d.serviceId,musteri_no:d.customerNo,adres:d.address,plakalar:d.plates,atanan_personel:me.id});if(r.error)return alert(r.error.message);e.target.reset();await load();go('tasks')};
+$('#report').onsubmit=async e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target)),status=d.status==='Bulunamadı'?'Tekrar keşif':'Tamamlandı';let a=await db.from('kesif_dosyalari').update({durum:status}).eq('id',d.id),b=await db.from('kesif_sonuclari').upsert({dosya_id:d.id,adres_sonucu:d.status,mal_tespiti:d.asset,arac_durumu:d.vehicleCheck,adres_teyidi:d.locationCheck,odeme_durumu:d.paymentStatus,odeme_sozu_tarihi:d.promiseDate||null,notlar:d.note});if(a.error||b.error)return alert((a.error||b.error).message);await load();go('tasks')};
+$('#import').onclick=()=>alert('Toplu ekleme, güvenlik için ilk canlı sürümde Excel/CSV dosyası yükleme ekranına geçirilecektir.');$('#downloadTemplate').onclick=()=>{let a=document.createElement('a');a.href='data:text/csv;charset=utf-8,tarih,icra_dairesi,dosya_no,borclu_unvani,bakiye,service_id,musteri_no,adres,plakalar';a.download='kesif-sablon.csv';a.click()};
+(async()=>{let {data:{session}}=await db.auth.getSession();if(session)ready(session)})();
