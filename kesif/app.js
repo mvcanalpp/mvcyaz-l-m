@@ -4,6 +4,7 @@ const today = new Date().toISOString().slice(0, 10);
 let records = [];
 let profile;
 let importedRows = [];
+let users = [];
 
 document.head.insertAdjacentHTML('beforeend', '<style>body{background:radial-gradient(circle at top right,#dbeafe,#f8fafc 42%,#eff6ff)}.panel,.card,.case{box-shadow:0 8px 28px #163a5f12;border-color:#dbeafe}.top{padding:10px 0}.brand{letter-spacing:-.4px}.primary{background:linear-gradient(135deg,#2563eb,#0f4cba)}.tabs{padding:7px;background:#fff;border:1px solid #dbeafe;border-radius:14px}.tabs button{border:0}.card{background:linear-gradient(145deg,#fff,#f8fbff)}h2{letter-spacing:-.3px}</style>');
 document.body.insertAdjacentHTML('afterbegin', '<div id="auth" style="position:fixed;inset:0;z-index:5;background:#102a43ee;display:grid;place-items:center;padding:18px"><form id="authForm" class="panel" style="width:min(420px,100%);background:white"><h2>MVC Keşif Girişi</h2><p class="muted">Hesaplar yalnızca yönetici tarafından oluşturulur.</p><label>E-posta<input name="email" type="email" required></label><br><label>Şifre<input name="password" type="password" minlength="8" required></label><div class="actions"><button class="primary">Giriş yap</button></div><p id="authMsg" class="muted"></p></form></div>');
@@ -29,7 +30,11 @@ function tasks() {
   const date = $('#taskDate').value || today;
   $('#taskDate').value = date;
   const list = records.filter((x) => x.date === date);
-  $('#taskList').innerHTML = list.length ? `<div class="table-wrap"><table><thead><tr><th>İcra Dairesi</th><th>Dosya No</th><th>Borçlu Ünvanı</th><th>Bakiye</th><th>Service ID</th><th>Müşteri No</th><th>Adres</th><th>Plakalar</th><th></th></tr></thead><tbody>${list.map((x) => `<tr><td>${esc(x.office)}</td><td>${esc(x.number)}</td><td>${esc(x.debtor)}</td><td>${esc(x.balance)}</td><td>${esc(x.serviceId)}</td><td>${esc(x.customerNo)}</td><td>${esc(x.address)}</td><td>${esc(x.plates)}</td><td><button class="primary" onclick="detail('${x.id}')">Keşfe başla</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Bu tarih için atanan keşif dosyası yok.</div>';
+  const admin = profile?.role === 'yonetici';
+  const options = users.map((user) => `<option value="${user.id}">${esc(user.full_name)} (${esc(user.role)})</option>`).join('');
+  const bulk = admin && list.length ? `<div class="notice actions"><label>Seçili dosyaları personele ata<select id="bulkAssignPerson">${options}</select></label><button class="primary" onclick="assignSelected()">Seçilenleri ata</button><button class="outline" onclick="selectAllTasks()">Tümünü seç</button></div>` : '';
+  $('#taskList').innerHTML = list.length ? `${bulk}<div class="table-wrap"><table><thead><tr>${admin ? '<th><input type="checkbox" id="selectAll"></th>' : ''}<th>İcra Dairesi</th><th>Dosya No</th><th>Borçlu Ünvanı</th><th>Bakiye</th><th>Service ID</th><th>Müşteri No</th><th>Adres</th><th>Plakalar</th><th>İşlem</th></tr></thead><tbody>${list.map((x) => `<tr>${admin ? `<td><input class="taskSelect" type="checkbox" value="${x.id}"></td>` : ''}<td>${esc(x.office)}</td><td>${esc(x.number)}</td><td>${esc(x.debtor)}</td><td>${esc(x.balance)}</td><td>${esc(x.serviceId)}</td><td>${esc(x.customerNo)}</td><td>${esc(x.address)}</td><td>${esc(x.plates)}</td><td class="actions"><button class="primary" onclick="detail('${x.id}')">Keşfe başla</button>${admin ? `<select id="assign-${x.id}">${users.map((user) => `<option value="${user.id}" ${user.id === x.assignee ? 'selected' : ''}>${esc(user.full_name)}</option>`).join('')}</select><button class="outline" onclick="assignOne('${x.id}')">Personele ilet</button><button class="outline" onclick="deleteFile('${x.id}')">Sil</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Bu tarih için atanan keşif dosyası yok.</div>';
+  $('#selectAll') && ($('#selectAll').onchange = (event) => document.querySelectorAll('.taskSelect').forEach((box) => box.checked = event.target.checked));
 }
 function detail(id) {
   const x = records.find((row) => row.id === id);
@@ -41,15 +46,44 @@ function detail(id) {
   switchView('detail');
 }
 window.detail = detail;
+async function assignFiles(ids, personId) {
+  if (!ids.length || !personId) return alert('Dosya ve personel seçin.');
+  const { error } = await db.from('kesif_dosyalari').update({ atanan_personel:personId }).in('id', ids);
+  if (error) return alert(error.message);
+  await load();
+  alert(`${ids.length} dosya personele iletildi.`);
+}
+async function assignOne(id) { await assignFiles([id], $(`#assign-${id}`).value); }
+async function assignSelected() {
+  const ids = [...document.querySelectorAll('.taskSelect:checked')].map((box) => box.value);
+  await assignFiles(ids, $('#bulkAssignPerson').value);
+}
+function selectAllTasks() {
+  document.querySelectorAll('.taskSelect').forEach((box) => box.checked = true);
+  const all = $('#selectAll'); if (all) all.checked = true;
+}
+async function deleteFile(id) {
+  const item = records.find((row) => row.id === id);
+  if (!confirm(`${item.number} numaralı dosya silinsin mi?`)) return;
+  const { error } = await db.from('kesif_dosyalari').delete().eq('id', id);
+  if (error) return alert(error.message);
+  await load();
+  alert('Dosya silindi.');
+}
+window.assignOne = assignOne;
+window.assignSelected = assignSelected;
+window.selectAllTasks = selectAllTasks;
+window.deleteFile = deleteFile;
 async function load() {
   const { data, error } = await db.from('kesif_dosyalari').select('*').order('kesif_tarihi');
   if (error) return alert(error.message);
-  records = data.map((x) => ({ id:x.id, date:x.kesif_tarihi, office:x.icra_dairesi, number:x.dosya_no, debtor:x.borclu_unvani, balance:x.bakiye, serviceId:x.service_id, customerNo:x.musteri_no, address:x.adres, plates:x.plakalar, status:x.durum }));
+  records = data.map((x) => ({ id:x.id, date:x.kesif_tarihi, office:x.icra_dairesi, number:x.dosya_no, debtor:x.borclu_unvani, balance:x.bakiye, serviceId:x.service_id, customerNo:x.musteri_no, address:x.adres, plates:x.plakalar, status:x.durum, assignee:x.atanan_personel }));
   dashboard(); tasks();
 }
 async function loadUsers() {
   const { data, error } = await db.from('profiles').select('id,full_name,role,created_at').order('full_name');
   if (error) return alert(error.message);
+  users = data;
   const options = data.map((x) => `<option value="${x.id}">${esc(x.full_name)} (${x.role})</option>`).join('');
   $('[name=assignee]').outerHTML = `<select name="assignee">${options}</select>`;
   $('#bulkPerson').innerHTML = options;
