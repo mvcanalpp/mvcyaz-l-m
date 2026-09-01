@@ -1,0 +1,13 @@
+{
+  "name": "mvc-kesif-photos",
+  "main": "kesif-photo-proxy.js",
+  "compatibility_date": "2026-08-31",
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "r2_buckets": [
+    { "binding": "KESIF_PHOTOS", "bucket_name": "mvc-kesif-fotograflar" }
+  ],
+  "vars": {
+    "SUPABASE_URL": "https://hqrheypbdvhwpnwdoqka.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_-YVy92hAZ_-IpNJOJTX_Sg_kQVd5_ZI"
+  }
+}

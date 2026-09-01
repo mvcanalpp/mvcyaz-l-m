@@ -12,6 +12,7 @@ document.querySelector('.top > #install')?.remove();
 document.querySelector('#bulk .notice').innerHTML = 'Güncel Excel şablonu sütunları: <b>Atama Ayı, Servis/Föy No, Müşteri No, Borçlu Adı, Borçlu Türü, İcra Dairesi, İcra Dosya No, Açık Risk, Telefonlar, Kriter, Plakalar, Adres</b>. Keşif tarihi panelden seçilir.';
 document.body.insertAdjacentHTML('afterbegin', '<div id="auth" style="position:fixed;inset:0;z-index:5;background:#102a43ee;display:grid;place-items:center;padding:18px"><form id="authForm" class="panel" style="width:min(420px,100%);background:white"><h2>MVC Keşif Girişi</h2><p class="muted">Hesaplar yalnızca yönetici tarafından oluşturulur.</p><label>E-posta<input name="email" type="email" required></label><br><label>Şifre<input name="password" type="password" minlength="8" required></label><div class="actions"><button class="primary">Giriş yap</button></div><p id="authMsg" class="muted"></p></form></div>');
 $('#report').insertAdjacentHTML('beforeend', '<label>Araç / adres tespiti<select name="vehicleCheck"><option>Araç adreste bulundu</option><option>Araçlar adreste bulundu</option><option>Araç bulunamadı</option></select></label><label>Adres teyidi<select name="locationCheck"><option>Adres komşudan teyit edildi</option><option>Adres muhtardan teyit edildi</option><option>Adres teyit edilemedi</option></select></label><label>Ödeme durumu<select name="paymentStatus"><option>Ödeme yapma durumu yok</option><option>Ödeme yaptı</option><option>Ödeme yapacak</option><option>Fiili hacze gelinsin</option></select></label><label>Ödeme tutarı (₺)<input name="paymentAmount" type="number" min="0" step="0.01" value="0"></label><label>Ödeme sözü tarihi<input name="promiseDate" type="date"></label>');
+$('#report').insertAdjacentHTML('beforeend', '<label class="full">Keşif fotoğrafları <input name="photos" type="file" accept="image/*" capture="environment" multiple><span class="muted">Telefonda kamera açılır; en fazla 10 MB görsel seçin.</span></label>');
 
 const esc = (value) => String(value ?? '—').replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
 const pill = (status) => `<span class="pill ${status === 'Tamamlandı' ? 'done' : status === 'Tekrar keşif' ? 'retry' : ''}">${esc(status)}</span>`;
@@ -118,7 +119,22 @@ document.querySelectorAll('[data-go]').forEach((el) => el.onclick = () => switch
 $('#taskDate').onchange = tasks;
 $('#userForm').onsubmit = async (event) => { event.preventDefault(); const result = await db.functions.invoke('create-user', { body:Object.fromEntries(new FormData(event.target)) }); if (result.error) return alert(result.error.message); event.target.reset(); await loadUsers(); alert('Kullanıcı oluşturuldu.'); };
 $('#addForm').onsubmit = async (event) => { event.preventDefault(); if (profile.role !== 'yonetici') return; const d = Object.fromEntries(new FormData(event.target)); const result = await db.from('kesif_dosyalari').insert({ kesif_tarihi:d.date, icra_dairesi:d.office, dosya_no:d.number, borclu_unvani:d.debtor, bakiye:d.balance || null, service_id:d.serviceId, musteri_no:d.customerNo, adres:d.address, plakalar:d.plates, atanan_personel:d.assignee }); if (result.error) return alert(result.error.message); event.target.reset(); await load(); switchView('tasks'); };
-$('#report').onsubmit = async (event) => { event.preventDefault(); const d = Object.fromEntries(new FormData(event.target)); const status = d.status === 'Bulunamadı' ? 'Tekrar keşif' : 'Tamamlandı'; const [a, b] = await Promise.all([db.from('kesif_dosyalari').update({ durum:status }).eq('id', d.id), db.from('kesif_sonuclari').upsert({ dosya_id:d.id, adres_sonucu:d.status, mal_tespiti:d.asset, arac_durumu:d.vehicleCheck, adres_teyidi:d.locationCheck, odeme_durumu:d.paymentStatus, odeme_tutari:Number(d.paymentAmount || 0), odeme_sozu_tarihi:d.promiseDate || null, notlar:d.note })]); if (a.error || b.error) return alert((a.error || b.error).message); const item = records.find((row) => row.id === d.id); await load(); await notify('Keşif sonucu kaydedildi', `${item?.number || 'Dosya'} · ${d.status}`); switchView('tasks'); };
+const PHOTO_API_URL = 'https://mvc-kesif-photos.mvcanalpp.workers.dev';
+async function uploadPhotos(fileId, files) {
+  if (!files.length) return [];
+  const { data:{ session } } = await db.auth.getSession();
+  if (!session) throw new Error('Oturum bulunamadı.');
+  const urls = [];
+  for (const file of files) {
+    if (!file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) throw new Error('Yalnızca 10 MB altındaki görseller eklenebilir.');
+    const name = `${crypto.randomUUID()}.${(file.type.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '')}`;
+    const response = await fetch(`${PHOTO_API_URL}/files/${fileId}/${name}`, { method:'PUT', headers:{ authorization:`Bearer ${session.access_token}`, apikey:'sb_publishable_-YVy92hAZ_-IpNJOJTX_Sg_kQVd5_ZI', 'content-type':file.type, 'content-length':String(file.size) }, body:file });
+    if (!response.ok) throw new Error('Fotoğraf yüklenemedi. Fotoğraf servisi henüz yayımlanmamış olabilir.');
+    urls.push((await response.json()).url);
+  }
+  return urls;
+}
+$('#report').onsubmit = async (event) => { event.preventDefault(); const form = new FormData(event.target); const d = Object.fromEntries(form); const status = d.status === 'Bulunamadı' ? 'Tekrar keşif' : 'Tamamlandı'; try { const photos = await uploadPhotos(d.id, [...form.getAll('photos')].filter((file) => file?.size)); const [a, b] = await Promise.all([db.from('kesif_dosyalari').update({ durum:status }).eq('id', d.id), db.from('kesif_sonuclari').upsert({ dosya_id:d.id, adres_sonucu:d.status, mal_tespiti:d.asset, arac_durumu:d.vehicleCheck, adres_teyidi:d.locationCheck, odeme_durumu:d.paymentStatus, odeme_tutari:Number(d.paymentAmount || 0), odeme_sozu_tarihi:d.promiseDate || null, notlar:d.note, fotograflar:photos })]); if (a.error || b.error) return alert((a.error || b.error).message); const item = records.find((row) => row.id === d.id); await load(); await notify('Keşif sonucu kaydedildi', `${item?.number || 'Dosya'} · ${d.status}`); switchView('tasks'); } catch (error) { alert(error.message); } };
 
 let serviceWorkerRegistration;
 async function enableNotifications() {
