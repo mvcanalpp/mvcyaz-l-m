@@ -15,6 +15,9 @@ $('#report').insertAdjacentHTML('beforeend', '<label>Araç / adres tespiti<selec
 $('#report').insertAdjacentHTML('beforeend', '<label class="full">Keşif fotoğrafları <input name="photos" type="file" accept="image/*" capture="environment" multiple><span class="muted">Telefonda kamera açılır; en fazla 10 MB görsel seçin.</span></label>');
 
 const esc = (value) => String(value ?? '—').replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
+const cities = ['adana','adiyaman','afyonkarahisar','ağrı','amasya','ankara','antalya','artvin','aydın','balıkesir','bilecik','bingöl','bitlis','bolu','burdur','bursa','çanakkale','çankırı','çorum','denizli','diyarbakır','edirne','elazığ','erzincan','erzurum','eskişehir','gaziantep','giresun','gümüşhane','hakkari','hatay','ısparta','mersin','istanbul','izmir','kars','kastamonu','kayseri','kırklareli','kırşehir','kocaeli','konya','kütahya','malatya','manisa','kahramanmaraş','mardin','muğla','muş','nevşehir','niğde','ordu','rize','sakarya','samsun','siirt','sinop','sivas','tekirdağ','tokat','trabzon','tunceli','şanlıurfa','uşak','van','yozgat','zonguldak','aksaray','bayburt','karaman','kırıkkale','batman','şırnak','bartın','ardahan','ığdır','yalova','karabük','kilis','osmaniye','düzce'];
+function splitAddress(address) { const parts = String(address || '').split(/[,/]/).map((part) => part.trim()).filter(Boolean); const city = parts.find((part) => cities.includes(part.toLocaleLowerCase('tr-TR'))) || parts.at(-1) || ''; const district = parts.length > 1 ? parts[parts.indexOf(city) - 1] || parts.at(-2) : ''; return { city, district }; }
+const mapsUrl = (address) => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 const pill = (status) => `<span class="pill ${status === 'Tamamlandı' ? 'done' : status === 'Tekrar keşif' ? 'retry' : ''}">${esc(status)}</span>`;
 function switchView(view) {
   document.querySelectorAll('.view').forEach((el) => el.classList.remove('active'));
@@ -29,6 +32,7 @@ function dashboard() {
   $('#done').textContent = records.filter((x) => x.status === 'Tamamlandı').length;
   $('#retry').textContent = records.filter((x) => x.status === 'Tekrar keşif').length;
   $('#upcoming').innerHTML = records.slice(0, 6).map((x) => `<div class="case"><div><span class="label">${x.date} · ${esc(x.office)}</span><h3>${esc(x.number)} · ${esc(x.debtor)}</h3><p>${esc(x.address)}</p></div>${pill(x.status)}</div>`).join('') || '<div class="empty">Henüz görev yok.</div>';
+  const clusters = records.filter((x) => x.status !== 'Tamamlandı').reduce((all, x) => { const key = `${x.city || 'Belirsiz'} · ${x.district || 'Belirsiz'}`; (all[key] ||= []).push(x); return all; }, {}); const nearby = Object.entries(clusters).filter(([, files]) => files.length > 1).sort((a,b) => b[1].length - a[1].length).slice(0,3); $('#upcoming').insertAdjacentHTML('beforeend', nearby.length ? `<div class="notice"><b>Yakın konum önerileri:</b> ${nearby.map(([area,files]) => `${esc(area)}: ${files.length} dosya`).join(' · ')}</div>` : '');
 }
 function tasks() {
   const date = $('#taskDate').value || today;
@@ -45,7 +49,7 @@ function detail(id) {
   $('#dDate').textContent = `${x.date} · ${x.office}`;
   $('#dTitle').textContent = `${x.number} · ${x.debtor}`;
   $('#dAddress').textContent = x.address;
-  $('#detailInfo').innerHTML = [['Atama Ayı', x.assignmentMonth], ['Borçlu Türü', x.debtorType], ['Bakiye', x.balance], ['Service ID', x.serviceId], ['Müşteri No', x.customerNo], ['Telefonlar', x.phones], ['Kriter', x.criteria], ['Plakalar', x.plates]].map((row) => `<tr><th>${row[0]}</th><td>${esc(row[1])}</td></tr>`).join('');
+  $('#detailInfo').innerHTML = [['Atama Ayı', x.assignmentMonth], ['İl / İlçe', `${x.city || '—'} / ${x.district || '—'}`], ['Borçlu Türü', x.debtorType], ['Bakiye', x.balance], ['Service ID', x.serviceId], ['Müşteri No', x.customerNo], ['Telefonlar', x.phones], ['Kriter', x.criteria], ['Plakalar', x.plates], ['Konum', `<a target="_blank" href="${mapsUrl(x.address)}">Yol tarifi al</a>`]].map((row) => `<tr><th>${row[0]}</th><td>${row[0] === 'Konum' ? row[1] : esc(row[1])}</td></tr>`).join('');
   $('#report [name=id]').value = id;
   switchView('detail');
 }
@@ -92,7 +96,7 @@ window.deleteSelected = deleteSelected;
 async function load() {
   const { data, error } = await db.from('kesif_dosyalari').select('*').order('kesif_tarihi');
   if (error) return alert(error.message);
-  records = data.map((x) => ({ id:x.id, date:x.kesif_tarihi, assignmentMonth:x.atama_ayi, office:x.icra_dairesi, number:x.dosya_no, debtor:x.borclu_unvani, debtorType:x.borclu_turu, balance:x.bakiye, serviceId:x.service_id, customerNo:x.musteri_no, phones:x.telefonlar, criteria:x.kriter, address:x.adres, plates:x.plakalar, status:x.durum, assignee:x.atanan_personel }));
+  records = data.map((x) => ({ id:x.id, date:x.kesif_tarihi, assignmentMonth:x.atama_ayi, office:x.icra_dairesi, number:x.dosya_no, debtor:x.borclu_unvani, debtorType:x.borclu_turu, balance:x.bakiye, serviceId:x.service_id, customerNo:x.musteri_no, phones:x.telefonlar, criteria:x.kriter, address:x.adres, plates:x.plakalar, city:x.il, district:x.ilce, status:x.durum, assignee:x.atanan_personel }));
   dashboard(); tasks();
 }
 async function loadUsers() {
@@ -154,6 +158,13 @@ async function notify(title, body) {
 $('#notifications').onclick = enableNotifications;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then((registration) => { serviceWorkerRegistration = registration; if (Notification.permission === 'granted') $('#notifications').textContent = '🔔 Bildirimler açık'; }).catch(() => {});
 
+let locationWatch;
+async function shareLocation(position) { const { error } = await db.from('personel_konumlari').upsert({ personel_id:profile.id, latitude:position.coords.latitude, longitude:position.coords.longitude, updated_at:new Date().toISOString() }, { onConflict:'personel_id' }); if (error) console.warn(error.message); }
+function startLocationTracking() { if (!navigator.geolocation) return alert('Bu cihaz canlı konum paylaşımını desteklemiyor.'); if (locationWatch) return alert('Konum paylaşımı zaten açık.'); locationWatch = navigator.geolocation.watchPosition(shareLocation, () => alert('Konum izni verilmedi.'), { enableHighAccuracy:true, maximumAge:30000, timeout:15000 }); $('#locationButton').textContent = '📍 Konum paylaşımı açık'; notify('Konum paylaşımı başladı', 'Yöneticiler canlı konumunuzu görebilir.'); }
+function stopLocationTracking() { if (locationWatch) navigator.geolocation.clearWatch(locationWatch); locationWatch = undefined; $('#locationButton').textContent = '📍 Canlı konumu paylaş'; }
+document.querySelector('.top').insertAdjacentHTML('beforeend', '<div class="actions" style="margin:0"><button class="outline" id="locationButton">📍 Canlı konumu paylaş</button></div>');
+$('#locationButton').onclick = () => locationWatch ? stopLocationTracking() : startLocationTracking();
+
 function normal(value) { return String(value ?? '').toLocaleLowerCase('tr-TR').replaceAll('ı','i').replaceAll('ş','s').replaceAll('ğ','g').replaceAll('ü','u').replaceAll('ö','o').replaceAll('ç','c').replace(/[^a-z0-9]/g, ''); }
 function valueOf(row, names) { const key = Object.keys(row).find((name) => names.includes(normal(name))); return key ? row[key] : ''; }
 function toIsoDate(value) {
@@ -187,7 +198,7 @@ function prepareItems(rows, defaultDate, assignee) {
     const phones = valueOf(row, ['telefonlar','telefon']); const criteria = valueOf(row, ['kriter']);
     const date = toIsoDate(valueOf(row, ['kesiftarihi'])) || defaultDate;
     if (!debtor || !office || !number || !address || !date) { invalid.push(index + 2); return; }
-    items.push({ kesif_tarihi:date, atama_ayi:assignmentMonth || null, icra_dairesi:office, dosya_no:number, borclu_unvani:debtor, borclu_turu:debtorType || null, bakiye:parseBalance(balance), service_id:serviceId || null, musteri_no:customerNo || null, telefonlar:phones || null, kriter:criteria || null, adres:address, plakalar:plates || null, atanan_personel:assignee });
+    const location = splitAddress(address); items.push({ kesif_tarihi:date, atama_ayi:assignmentMonth || null, icra_dairesi:office, dosya_no:number, borclu_unvani:debtor, borclu_turu:debtorType || null, bakiye:parseBalance(balance), service_id:serviceId || null, musteri_no:customerNo || null, telefonlar:phones || null, kriter:criteria || null, adres:address, il:location.city || null, ilce:location.district || null, plakalar:plates || null, atanan_personel:assignee });
   });
   return { items, invalid };
 }
