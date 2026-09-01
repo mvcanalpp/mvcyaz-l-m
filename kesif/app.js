@@ -119,7 +119,7 @@ document.querySelectorAll('[data-go]').forEach((el) => el.onclick = () => switch
 $('#taskDate').onchange = tasks;
 $('#userForm').onsubmit = async (event) => { event.preventDefault(); const result = await db.functions.invoke('create-user', { body:Object.fromEntries(new FormData(event.target)) }); if (result.error) return alert(result.error.message); event.target.reset(); await loadUsers(); alert('Kullanıcı oluşturuldu.'); };
 $('#addForm').onsubmit = async (event) => { event.preventDefault(); if (profile.role !== 'yonetici') return; const d = Object.fromEntries(new FormData(event.target)); const result = await db.from('kesif_dosyalari').insert({ kesif_tarihi:d.date, icra_dairesi:d.office, dosya_no:d.number, borclu_unvani:d.debtor, bakiye:d.balance || null, service_id:d.serviceId, musteri_no:d.customerNo, adres:d.address, plakalar:d.plates, atanan_personel:d.assignee }); if (result.error) return alert(result.error.message); event.target.reset(); await load(); switchView('tasks'); };
-const PHOTO_API_URL = 'https://mvc-kesif-photos.mvcanalpp.workers.dev';
+const PHOTO_API_URL = 'https://mvc-kesif-photos.volkancanalp-alkanhukuk.workers.dev';
 async function uploadPhotos(fileId, files) {
   if (!files.length) return [];
   const { data:{ session } } = await db.auth.getSession();
