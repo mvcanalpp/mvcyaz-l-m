@@ -1,0 +1,20 @@
+.sidebar{background:#1d142c;border-right:1px solid #312345}
+.brand{padding:7px 8px 13px}
+.brand-mark{position:relative;background:#7547ad;box-shadow:0 8px 20px #00000036}
+.brand-mark span{font-size:16px;font-weight:900;letter-spacing:0}
+.brand-mark:after{content:"";position:absolute;width:11px;height:2px;border-radius:2px;background:#d9c7ef;transform:rotate(-32deg);bottom:10px;right:9px}
+.menu-title{margin:2px 9px 5px;color:#887a9f;font-size:10px;font-weight:900;letter-spacing:.8px}
+.mode{display:none}
+.nav{padding:0 2px}
+.nav button{min-height:41px;padding:10px 11px}
+.nav-icon{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;color:#d5ccdf;background:#2b203e;font-size:12px;line-height:1}
+.nav-label{white-space:nowrap}
+.nav button:hover .nav-icon,.nav .on .nav-icon{color:#fff;background:#8b5ac2}
+.nav em{box-shadow:none}
+.logout{display:grid;place-items:center;width:30px;height:30px;margin-left:auto;border:1px solid #48345e;border-radius:6px;background:transparent;color:#d3c8e2;cursor:pointer}.logout:hover{background:#362249;color:#fff}
+.logout{width:auto;min-height:30px;padding:0 9px;font-size:10px;font-weight:800}
+.result-extra{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #edf0f4}
+.images a{display:inline-flex;position:relative}.images a:hover img{border-color:#8050b9;transform:scale(1.04)}.images img{transition:transform .15s ease,border-color .15s ease}
+.login-shell{display:grid;min-height:100vh;place-items:center;padding:24px;background:linear-gradient(135deg,#f7f8fc,#ede8f8)}
+.login-card{width:min(430px,100%);padding:42px;border:1px solid #e1deeb;border-radius:12px;background:#fff;box-shadow:0 20px 60px #2f23451a}.login-mark{display:grid;place-items:center;width:54px;height:54px;margin-bottom:22px;border-radius:13px;background:#7547ad;color:#fff;font-size:21px;font-weight:900}.login-card h1{margin:0;font-size:29px}.login-card>p:not(.eyebrow){margin:10px 0 25px;color:#6f7788;line-height:1.5}.login-card form{display:grid;gap:15px}.login-card label{display:grid;gap:7px;color:#3d4658;font-size:12px;font-weight:800}.login-card input{height:44px;padding:0 12px;border:1px solid #d8ddea;border-radius:7px;color:#1c2738;font:inherit}.login-error{min-height:16px;margin:0;color:#bd3143;font-size:12px;font-weight:700}.login-btn{width:100%;margin-top:2px}
+@media(max-width:720px){.menu-title{display:none}.nav .nav-icon{width:18px;height:18px;background:transparent}.nav .nav-label{font-size:11px}.logout{display:none}.login-card{padding:28px 23px}}
