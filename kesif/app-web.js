@@ -222,6 +222,22 @@
   document.addEventListener("click",event=>{let button=event.target.closest("[data-result-detail]");if(button)state.openResultId=button.dataset.resultDetail},true);
   new MutationObserver(()=>{let modal=$("#resultDetails"),foot=modal?.querySelector(".modal-foot");if(!modal||!foot||state.role!=="manager"||foot.querySelector("#approveResult"))return;let file=state.files.find(item=>item.id===state.openResultId);if(!file)return;foot.insertAdjacentHTML("afterbegin",`<span style="margin-right:auto;align-self:center;font-size:12px;font-weight:800;color:${file.managerApproved?"#16805e":"#9a6a18"}">${file.managerApproved?"Yönetici onayı verildi":"Yönetici onayı bekliyor"}</span><button class="btn primary" id="approveResult" ${file.managerApproved?"disabled":""}>✓ Sonucu onayla</button>`)}).observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener("click",async event=>{if(!event.target.closest("#approveResult"))return;let file=state.files.find(item=>item.id===state.openResultId);if(!file)return;try{let approvedAt=new Date().toISOString(),{error}=await cloud.from("discovery_results").update({manager_approved:true,approved_by:state.user.id,approved_at:approvedAt}).eq("task_id",file.id);if(error)throw error;state.files=state.files.map(item=>item.id===file.id?{...item,managerApproved:true,approvedAt}:item);alert("Keşif sonucu yönetici tarafından onaylandı.");$("#resultDetails")?.remove();render()}catch(error){alert(`Sonuç onayı kaydedilemedi. Operasyon güncellemesi SQL'i uygulanmış olmalı: ${error.message||error}`)}},true);
+  function relaxResultForm(){
+    let form=$("#resultForm");
+    if(!form||form.dataset.relaxed==="yes")return;
+    form.dataset.relaxed="yes";
+    form.querySelectorAll("[required]").forEach(field=>field.removeAttribute("required"));
+    let guidance=form.querySelector(".modal-head p");if(guidance)guidance.textContent="Yalnızca elinizdeki bilgileri girin; boş alanlar sonradan tamamlanabilir.";
+    form.onsubmit=async event=>{
+      event.preventDefault();
+      let file=task();
+      if(!file)return;
+      let data=new FormData(form),photos=[...(form.photos?.files||[])],submit=$("#resultSubmit"),updated={...file,addressConfirmed:data.get("address")===""?undefined:data.get("address")==="true",payment:data.get("payment")===""?null:data.get("payment")==="true",paymentAmount:readMoney(data.get("amount")),vehiclePresent:data.get("vehicle")===""?undefined:data.get("vehicle")==="true",contactMade:data.get("contactMade")||"",outcome:data.get("outcome")||"",paymentIntent:data.get("paymentIntent")||"",promiseDate:data.get("promiseDate")||"",fieldNote:data.get("fieldNote")||"",status:"Tamamlandı",completedAt:new Date().toISOString()},previous=state.files;
+      if(submit){submit.disabled=true;submit.textContent="Kaydediliyor..."}
+      try{state.files=state.files.map(item=>item.id===updated.id?updated:item);save(false);await updateCloudTask(updated);await saveCloudResult(updated);if(photos.length)await uploadResultMedia(photos,updated,(index,total)=>{if(submit)submit.textContent=`Görsel yükleniyor (${index+1}/${total})...`});state.remoteTaskFingerprints.set(updated.id,taskFingerprint(updated));await loadCloudData();$("#modal")?.remove();state.page="results";render()}catch(error){state.files=previous;state.pendingResultIds.add(updated.id);save(true);if(submit){submit.disabled=false;submit.textContent="✓ Tekrar dene"}alert(`Sonuç kaydedilemedi: ${error.message||error}`)}
+    };
+  }
+  new MutationObserver(relaxResultForm).observe(document.documentElement,{childList:true,subtree:true});
   async function hydrateOperationFields(){
     if(!cloud||!state.user?.cloud)return;
     try{let {data,error}=await cloud.from("discovery_tasks").select("id,assigned_at,due_at,priority_level,discovery_results(manager_approved,approved_at)");if(error)throw error;let byId=new Map((data||[]).map(row=>[row.id,row]));state.files=state.files.map(file=>{let row=byId.get(file.id),result=Array.isArray(row?.discovery_results)?row.discovery_results[0]:row?.discovery_results;return row?{...file,assignedAt:row.assigned_at||null,dueAt:row.due_at||null,priorityLevel:row.priority_level||"normal",managerApproved:result?.manager_approved||false,approvedAt:result?.approved_at||null}:file})}catch(error){console.warn("Operasyon alanları yüklenemedi",error)}
