@@ -200,6 +200,20 @@
     state.selected=event.target.checked?visible.map(file=>file.id):[];
     render();
   },true);
+  document.addEventListener("click",event=>{
+    let detailButton=event.target.closest("[data-task]");
+    if(!detailButton)return;
+    event.preventDefault();
+    state.taskId=detailButton.dataset.task;
+    render();
+  },true);
+  function retainTaskFilters(){
+    let personFilter=$("#taskPerson"),statusFilter=$("#taskStatus"),resultPerson=$("#resultPerson");
+    if(personFilter)personFilter.value=state.taskPerson||"";
+    if(statusFilter)statusFilter.value=state.taskStatus||"";
+    if(resultPerson)resultPerson.value=state.resultPerson||"";
+  }
+  new MutationObserver(retainTaskFilters).observe(document.documentElement,{childList:true,subtree:true});
   async function compactPhoto(photo){
     if(!photo.type?.startsWith("image/")||!window.createImageBitmap)return photo;
     try{let bitmap=await createImageBitmap(photo),scale=Math.min(1,1920/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);let context=canvas.getContext("2d");context.drawImage(bitmap,0,0,canvas.width,canvas.height);let stamp=`${new Date().toLocaleString("tr-TR")}${state.location?` | ${state.location.latitude.toFixed(5)}, ${state.location.longitude.toFixed(5)}`:""}`;context.font=`${Math.max(18,Math.round(canvas.width/48))}px Segoe UI`;let width=context.measureText(stamp).width+28,height=Math.max(36,Math.round(canvas.width/28));context.fillStyle="rgba(20,25,37,.7)";context.fillRect(10,canvas.height-height-10,width,height);context.fillStyle="#fff";context.fillText(stamp,24,canvas.height-10-Math.round(height*.28));let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.86));bitmap.close?.();return blob?new File([blob],`${photo.name.replace(/\.[^.]+$/,"")||"gorsel"}.jpg`,{type:"image/jpeg"}):photo}catch{return photo}
