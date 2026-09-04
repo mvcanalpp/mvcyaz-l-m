@@ -206,6 +206,7 @@
     event.preventDefault();
     state.taskId=detailButton.dataset.task;
     render();
+    requestAnimationFrame(()=>document.querySelector(".detail")?.scrollIntoView({behavior:"smooth",block:"start"}));
   },true);
   function retainTaskFilters(){
     let personFilter=$("#taskPerson"),statusFilter=$("#taskStatus"),resultPerson=$("#resultPerson");
