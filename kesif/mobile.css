@@ -4,6 +4,7 @@
 
 /* Field staff use a deliberately smaller, touch-first navigation and form flow. */
 @media (max-width:720px){
+  .sidebar{top:auto!important;bottom:0!important;width:100%!important;height:auto!important;min-height:0!important}
   .sidebar{background:#171120}
   .nav{justify-content:space-evenly;overflow:visible;padding-inline:7px}
   .nav button{flex:1 1 0;min-width:0;max-width:78px;min-height:62px;border:1px solid transparent;border-radius:10px}
