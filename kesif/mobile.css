@@ -1,0 +1,37 @@
+@media (max-width:720px){
+  body{background:#f5f6fa}.app{min-height:100dvh}.sidebar{position:fixed;z-index:40;right:0;bottom:0;left:0;display:block;padding:0;border:0;border-top:1px solid #ddd6e8;background:#1d142c;box-shadow:0 -8px 25px #1c173526}.brand,.menu-title,.mode,.me{display:none}.nav{display:flex;justify-content:space-around;gap:0;overflow-x:auto;padding:7px 5px calc(7px + env(safe-area-inset-bottom));scroll-snap-type:x mandatory}.nav button{display:grid;flex:0 0 70px;gap:3px;min-height:56px;padding:5px 3px;border-radius:9px;text-align:center;scroll-snap-align:start}.nav button:nth-child(n+7){display:none}.nav-icon{justify-self:center;width:27px!important;height:27px!important;font-size:15px!important}.nav-label{overflow:hidden;max-width:68px;font-size:9px!important;text-overflow:ellipsis;white-space:nowrap}.nav em{position:absolute;margin:1px 0 0 43px;min-width:17px;padding:1px 4px;font-size:8px}.main{padding:17px 13px 96px}.top{position:sticky;z-index:10;top:0;margin:-17px -13px 16px;padding:13px;background:#f7f8fcdf;backdrop-filter:blur(10px)}.top h1{font-size:21px}.top .eyebrow{font-size:9px}.top .btn{min-width:40px;height:40px;padding:0;font-size:0}.top .btn:first-letter{font-size:17px}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.card{min-height:80px;padding:12px}.card b{font-size:20px}.card span{font-size:10px}.panel{border-radius:8px}.head{padding:15px}.head h2{font-size:16px}.head p{font-size:11px}.tools{gap:8px;padding:11px}.tools>*{width:100%;min-height:43px}.tools .btn{min-height:43px}.search{height:43px}.select-bar{gap:8px;align-items:flex-start;padding:10px 13px;font-size:11px}.table-wrap{margin:0 -1px}.table-wrap table{min-width:700px}.task-layout{gap:12px}.task-layout .panel:first-child{min-height:0}.task-layout .detail{min-height:0}.detail{padding:17px}.detail-top h2{font-size:19px}.modalbg{padding:0}.modal{width:100%;min-height:100dvh;margin:0;border-radius:0}.modal-head{padding:18px}.modal-cols section{padding:18px}.modal-foot{position:sticky;bottom:0;padding:12px 17px;background:#fff}.choice{padding:14px 0}.choice button{min-width:62px;min-height:38px}.field input,.field select{height:43px;font-size:16px}.photo{min-height:70px}.login-shell{align-items:end;padding:0;background:linear-gradient(160deg,#25183a,#7247a6)}.login-card{width:100%;padding:31px 24px max(31px,env(safe-area-inset-bottom));border:0;border-radius:22px 22px 0 0;box-shadow:none}.login-card h1{font-size:27px}.login-card input{height:48px;font-size:16px}.login-btn{height:50px;font-size:15px}.login-remember{display:flex!important;grid-template-columns:18px 1fr;align-items:center;gap:8px!important;color:#647084!important}.login-remember input{width:18px;height:18px!important;padding:0}.alert-strip{align-items:flex-start;flex-direction:column}.alert-strip .btn{width:100%;min-height:40px}.route-stop{grid-template-columns:30px 1fr}.route-stop .btn{grid-column:2;width:100%;margin-top:3px}.ops-grid{gap:12px}
+}
+
+/* Field staff use a deliberately smaller, touch-first navigation and form flow. */
+@media (max-width:720px){
+  .sidebar{background:#171120}
+  .nav{justify-content:space-evenly;overflow:visible;padding-inline:7px}
+  .nav button{flex:1 1 0;min-width:0;max-width:78px;min-height:62px;border:1px solid transparent;border-radius:10px}
+  .nav button[data-page="files"],.nav button[data-page="performance"],.nav button[data-page="reports"],.nav button[data-page="team"]{display:none}
+  .nav button[data-page="dashboard"],.nav button[data-page="tasks"],.nav button[data-page="routes"],.nav button[data-page="map"],.nav button[data-page="results"]{display:grid}
+  .nav-label{max-width:74px;font-size:9px!important;font-weight:700}
+  .nav-icon{width:29px!important;height:29px!important;font-size:17px!important}
+  .nav button.on{background:#7844b8;border-color:#9d6ed5}
+  .main{padding-bottom:101px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .top>div:first-child{min-width:0}.top h1{max-width:205px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .top .btn{display:grid;place-items:center;width:48px;min-width:48px;border-radius:12px}
+  .task-layout{display:flex!important;flex-direction:column;gap:12px}
+  .task-list,.task-layout .detail{width:100%;min-width:0}
+  .task-row{min-height:92px;padding:15px 13px;align-items:start}
+  .task-row>div{min-width:0}.task-row b{font-size:15px}.task-row small,.task-row em{line-height:1.45}
+  .detail{padding:16px}.detail .address{align-items:start}.detail .address strong{font-size:15px;line-height:1.4}
+  .data-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.data-grid>div{min-height:72px;padding:10px}
+  .modal-head h2{font-size:22px;line-height:1.2}.modal-head p{font-size:13px;line-height:1.45}
+  .modal-cols{display:block}.modal-cols section{display:grid;gap:14px;padding:19px 18px}.modal-cols section+section{border-top:8px solid #f4f1f7}
+  .modal-cols h3{font-size:15px;margin:0;padding-bottom:8px;border-bottom:1px solid #e8e1ed}
+  .choice{display:block;padding:4px 0}.choice>span{display:block;margin-bottom:9px;font-size:15px;font-weight:800;color:#252037}
+  .choice>div{display:grid;grid-template-columns:1fr 1fr;gap:9px}.choice button{width:100%;min-height:50px;border-radius:10px;font-size:15px;font-weight:800}
+  .field{gap:7px;font-size:14px;font-weight:800}.field input,.field select{width:100%;height:52px;border-radius:10px;background:#fff;font-size:16px}
+  .field-note-tools .btn{width:100%;min-height:46px}
+  .photo{display:grid;grid-template-columns:35px 1fr;gap:12px;min-height:92px;padding:14px;border:1px dashed #a77bd4;border-radius:12px;background:#faf7ff}
+  .photo b{grid-column:2;justify-self:start;margin-top:3px}.photo input{grid-column:1/-1;width:100%}
+  .modal-foot{display:grid;grid-template-columns:1fr 1.45fr;gap:10px;padding:13px 17px calc(13px + env(safe-area-inset-bottom));border-top:1px solid #e7dfec}
+  .modal-foot .btn{min-height:52px;padding:10px;font-size:14px}.modal-foot .primary{font-size:15px}
+  .tools select,.tools input{font-size:16px}.tools{display:grid;grid-template-columns:1fr}.tools .search{width:100%}
+}
