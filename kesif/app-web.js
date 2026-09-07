@@ -239,10 +239,26 @@
   }
   new MutationObserver(relaxResultForm).observe(document.documentElement,{childList:true,subtree:true});
   function loginView(){return `<main class="login-shell"><section class="login-card"><div class="login-mark"><img src="./assets/kesif-logo.png" alt="Keşif Paneli"></div><p class="eyebrow">MVC YAZILIM</p><h1>Keşif Paneli</h1><p>Görevlerinize ve saha sonuçlarına güvenli erişim sağlayın.</p><form id="loginForm"><label>Kullanıcı adı<input name="username" autocomplete="username" required autofocus placeholder="Keşif kullanıcı adınız"></label><label>Şifre<input name="password" type="password" autocomplete="current-password" required placeholder="Şifreniz"></label><label class="login-remember"><input name="remember" type="checkbox" checked> Beni bu cihazda hatırla</label><p class="login-error" id="loginError"></p><button class="btn primary login-btn">Güvenli giriş</button></form></section></main>`}
-  const baseLoadCloudData=loadCloudDataCore;
   let knownAssignedTasks=null;
   async function loadCloudData(){
-    await baseLoadCloudData();
+    if(!cloud||!state.user?.cloud||state.cloudLoadBusy)return;
+    state.cloudLoadBusy=true;
+    try{
+      let rows=await readAllTasks();
+      state.files=(rows||[]).map(row=>{
+        let file=localTask(row);
+        file.evidence=(row.discovery_media||[]).map(item=>({name:item.file_name||"Görsel",nasPath:item.nas_path||"",storagePath:item.storage_path||"",url:"",pending:!item.archived_at}));
+        return file;
+      });
+      state.remoteTaskFingerprints=new Map(state.files.filter(file=>isUuid(file.id)).map(file=>[file.id,taskFingerprint(file)]));
+      if(state.role==="manager"){
+        let {data:people,error}=await cloud.from("discovery_accounts").select("id,display_name,username,role,active").eq("active",true).order("display_name");
+        if(error)throw error;
+        state.team=(people||[]).map((item,index)=>({id:item.id,name:item.display_name||item.username,initials:(item.display_name||item.username).split(" ").map(part=>part[0]).join("").slice(0,2).toUpperCase(),color:["violet","teal","amber"][index%3],online:false,location:"Konum bekleniyor"}));
+      }
+      await loadCloudLocations();
+      save(false);
+    } finally { state.cloudLoadBusy=false; }
     let assigned=state.files.filter(file=>file.assignee===state.user?.employeeId&&["Atandı","Sahada"].includes(file.status)),ids=new Set(assigned.map(file=>file.id));
     if(knownAssignedTasks){assigned.filter(file=>!knownAssignedTasks.has(file.id)).forEach(file=>{try{window.KesifAndroid?.notify("Yeni keşif görevi",`${file.debtor} · ${file.address}`)}catch(error){console.warn("Mobil bildirim gönderilemedi",error)}})}
     knownAssignedTasks=ids;
